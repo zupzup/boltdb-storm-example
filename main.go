@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/asdine/storm"
 	"github.com/asdine/storm/q"
-	"log"
-	"time"
 )
 
 // Config type
@@ -86,6 +88,26 @@ func main() {
 	}
 	fmt.Println("Entries from Two Days Ago:")
 	fmt.Println(twoDaysAgo)
+
+	var data []Entry
+	var filters []q.Matcher
+	filters = append(filters, q.Eq("Calories", 300))
+	filters = append(filters, q.Eq("Food", "bread"))
+	err = db.Select(filters...).Bucket("Entry").Find(&data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Filtered bread using Select() will find data", data)
+
+	var data2 []Entry
+	var filters2 []q.Matcher
+	filters2 = append(filters2, q.Eq("Calories", 50))
+	filters2 = append(filters2, q.Eq("Food", "bread"))
+	err = db.Select(filters2...).Bucket("Entry").Find(&data2)
+	if err != nil && strings.Index(err.Error(), "not found") == -1 {
+		log.Fatal(err)
+	}
+	log.Println("Filtered bread using Select() will not find data because the calories should match nothing", data2)
 }
 
 func addConfig(db *storm.DB, height float64, birthday time.Time) error {
